@@ -3,8 +3,8 @@ import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
-import Users from './pages/Users';
-import Settings from './pages/Settings';
+import Messages from './pages/Messages';
+
 
 function App() {
   return (
@@ -14,9 +14,8 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="products" element={<Products />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="users" element={<Users />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="orders" element={<Orders />} /> 
+          <Route path="messages" element={<Messages />} />
         </Route>
       </Routes>
     </Router>

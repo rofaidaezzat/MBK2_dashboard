@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import DataGrid from '../components/DataGrid';
+import CreateProduct from '../components/ProductModal/CreateProduct';
+import UpdateProduct from '../components/ProductModal/UpdateProduct';
+import DeleteProduct from '../components/ProductModal/DeleteProduct';
 
 interface Product {
   id: string;
@@ -57,7 +60,40 @@ const mockProducts: Product[] = [
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [products] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const handleCreateProduct = (newProduct: Product) => {
+    setProducts([...products, newProduct]);
+    setIsCreateModalOpen(false);
+  };
+
+  const handleUpdateProduct = (updatedProduct: Product) => {
+    setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+    setIsUpdateModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleDeleteProduct = () => {
+    if (selectedProduct) {
+      setProducts(products.filter(p => p.id !== selectedProduct.id));
+      setIsDeleteModalOpen(false);
+      setSelectedProduct(null);
+    }
+  };
+
+  const openUpdateModal = (product: Product) => {
+    setSelectedProduct(product);
+    setIsUpdateModalOpen(true);
+  };
+
+  const openDeleteModal = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDeleteModalOpen(true);
+  };
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,6 +149,7 @@ export default function Products() {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
+          onClick={() => openUpdateModal(product)}
           className="w-8 h-8 bg-cyan-500/20 border border-cyan-500/30 rounded flex items-center justify-center text-cyan-500 hover:bg-cyan-500/30 transition-all"
         >
           <Edit size={14} />
@@ -120,6 +157,7 @@ export default function Products() {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
+          onClick={() => openDeleteModal(product)}
           className="w-8 h-8 bg-red-500/20 border border-red-500/30 rounded flex items-center justify-center text-red-500 hover:bg-red-500/30 transition-all"
         >
           <Trash2 size={14} />
@@ -142,6 +180,7 @@ export default function Products() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={() => setIsCreateModalOpen(true)}
           className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-orbitron font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all"
         >
           <Plus size={20} />
@@ -200,6 +239,32 @@ export default function Products() {
       >
         <DataGrid columns={columns} data={tableData} />
       </motion.div>
+
+      <CreateProduct
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateProduct}
+      />
+
+      <UpdateProduct
+        isOpen={isUpdateModalOpen}
+        onClose={() => {
+          setIsUpdateModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSubmit={handleUpdateProduct}
+        product={selectedProduct}
+      />
+
+      <DeleteProduct
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onConfirm={handleDeleteProduct}
+        productName={selectedProduct?.name || ''}
+      />
     </motion.div>
   );
 }

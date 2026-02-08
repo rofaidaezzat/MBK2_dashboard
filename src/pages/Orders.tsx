@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Download } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import DataGrid from '../components/DataGrid';
+import ViewModal from '../components/OrderModal/ViewModal';
+import DeleteModal from '../components/OrderModal/DeleteModal';
 
 interface Order {
   id: string;
@@ -64,7 +66,28 @@ const mockOrders: Order[] = [
 ];
 
 export default function Orders() {
-  const [orders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  const handleViewOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsViewModalOpen(true);
+  };
+
+  const handleDeleteOrder = () => {
+    if (selectedOrder) {
+      setOrders(orders.filter(o => o.id !== selectedOrder.id));
+      setIsDeleteModalOpen(false);
+      setSelectedOrder(null);
+    }
+  };
+
+  const openDeleteModal = (order: Order) => {
+    setSelectedOrder(order);
+    setIsDeleteModalOpen(true);
+  };
 
   const getStatusBadge = (status: Order['status']) => {
     const styles = {
@@ -111,6 +134,7 @@ export default function Orders() {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
+          onClick={() => handleViewOrder(order)}
           className="w-8 h-8 bg-cyan-500/20 border border-cyan-500/30 rounded flex items-center justify-center text-cyan-500 hover:bg-cyan-500/30 transition-all"
         >
           <Eye size={14} />
@@ -118,9 +142,10 @@ export default function Orders() {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          className="w-8 h-8 bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-blue-500 hover:bg-blue-500/30 transition-all"
+          onClick={() => openDeleteModal(order)}
+          className="w-8 h-8 bg-red-500/20 border border-red-500/30 rounded flex items-center justify-center text-red-500 hover:bg-red-500/30 transition-all"
         >
-          <Download size={14} />
+          <Trash2 size={14} />
         </motion.button>
       </div>
     ),
@@ -145,13 +170,7 @@ export default function Orders() {
           >
             Export Data
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-orbitron font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all"
-          >
-            New Order
-          </motion.button>
+
         </div>
       </div>
 
@@ -238,6 +257,18 @@ export default function Orders() {
           ))}
         </div>
       </motion.div>
+      <ViewModal 
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        order={selectedOrder}
+      />
+
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteOrder}
+        orderId={selectedOrder?.id || ''}
+      />
     </motion.div>
   );
 }

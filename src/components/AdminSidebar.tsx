@@ -5,18 +5,18 @@ import {
   LayoutDashboard,
   Box,
   ShoppingBag,
-  Users,
-  Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageCircle
 } from 'lucide-react';
+import SidebarLogo from '../assets/595708428_122095426011158679_243980012230250174_n.jpg';
 
 const navItems = [
-  { path: '/admin', icon: LayoutDashboard, label: 'System Status' },
-  { path: '/admin/products', icon: Box, label: 'Inventory Grid' },
-  { path: '/admin/orders', icon: ShoppingBag, label: 'Transmission Logs' },
-  { path: '/admin/users', icon: Users, label: 'Access Control' },
-  { path: '/admin/settings', icon: Settings, label: 'Configuration' },
+  { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/admin/products', icon: Box, label: 'Products' },
+  { path: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
+  { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
+ 
 ];
 
 export default function AdminSidebar() {
@@ -32,20 +32,20 @@ export default function AdminSidebar() {
     >
       <div className="p-6">
         <motion.div
-          className="flex items-center gap-3 mb-8"
-          animate={{ justifyContent: isCollapsed ? 'center' : 'flex-start' }}
+          className="flex items-center justify-center mb-8"
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded flex items-center justify-center">
-            <span className="text-white font-orbitron font-bold">M2</span>
-          </div>
+          
           {!isCollapsed && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <h1 className="text-xl font-orbitron font-bold text-white">CONTROL DECK</h1>
-              <p className="text-xs text-cyan-500">v2.4.7</p>
+              <img 
+                src={SidebarLogo} 
+                alt="Control Deck" 
+                className="w-32 h-32 rounded-full object-cover border-4 border-cyan-500/20 shadow-lg shadow-cyan-500/20"
+              />
             </motion.div>
           )}
         </motion.div>
@@ -89,15 +89,7 @@ export default function AdminSidebar() {
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
-      <div className="absolute bottom-6 left-0 right-0 px-6">
-        <div className={`bg-dark-900/50 border border-cyan-500/20 rounded p-3 ${isCollapsed ? 'hidden' : 'block'}`}>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs text-gray-400 font-inter">System Online</span>
-          </div>
-          <div className="text-xs text-gray-500 font-mono">Uptime: 99.97%</div>
-        </div>
-      </div>
+      
     </motion.aside>
   );
 }
