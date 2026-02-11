@@ -1,47 +1,62 @@
+// Remove unused import if necessary, but keep for now
 import { motion } from 'framer-motion';
 import { DollarSign, ShoppingCart, Package, Activity } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StatsCard from '../components/StatsCard';
-
-const stats = [
-  {
-    title: 'Total Revenue',
-    value: '$284,592',
-    icon: DollarSign,
-    trend: { value: 12.5, isPositive: true },
-  },
-  {
-    title: 'Active Orders',
-    value: '847',
-    icon: ShoppingCart,
-    trend: { value: 8.2, isPositive: true },
-  },
-  {
-    title: 'Inventory Health',
-    value: '94',
-    icon: Package,
-    suffix: '%',
-    trend: { value: 2.1, isPositive: false },
-  },
-  {
-    title: 'Site Traffic',
-    value: '12.4K',
-    icon: Activity,
-    trend: { value: 15.7, isPositive: true },
-  },
-];
-
-const networkData = [
-  { time: '00:00', value: 4200 },
-  { time: '04:00', value: 3800 },
-  { time: '08:00', value: 6800 },
-  { time: '12:00', value: 9200 },
-  { time: '16:00', value: 11400 },
-  { time: '20:00', value: 8600 },
-  { time: '24:00', value: 7200 },
-];
+import { useGetStatsQuery } from '../app/Serves/crudStats';
 
 export default function Dashboard() {
+  const { data: statsData, isLoading, error } = useGetStatsQuery();
+
+  const stats = [
+    {
+      title: 'Total Revenue',
+      value: statsData?.data ? `$${statsData.data.totalRevenue.toLocaleString()}` : '$0',
+      icon: DollarSign,
+      trend: { value: 12.5, isPositive: true },
+    },
+    {
+      title: 'Active Orders',
+      value: statsData?.data ? statsData.data.activeOrders.toString() : '0',
+      icon: ShoppingCart,
+      trend: { value: 8.2, isPositive: true },
+    },
+    {
+      title: 'Inventory Health',
+      value: statsData?.data ? statsData.data.inventoryHealth.toString() : '0',
+      icon: Package,
+      suffix: '%',
+      trend: { value: 2.1, isPositive: false },
+    },
+    {
+      title: 'Site Traffic',
+      value: statsData?.data ? statsData.data.siteTraffic.toLocaleString() : '0',
+      icon: Activity,
+      trend: { value: 15.7, isPositive: true },
+    },
+  ];
+
+  const networkData = statsData?.data.salesActivity.map(item => ({
+    time: `${item.hour}:00`,
+    value: item.sales
+  })) || [];
+
+  if (isLoading) {
+      return (
+          <div className="flex items-center justify-center h-screen">
+              <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
+          </div>
+      );
+  }
+
+  if (error) {
+      return (
+          <div className="flex items-center justify-center h-screen text-red-500">
+              Error loading dashboard data
+          </div>
+      );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -127,80 +142,7 @@ export default function Dashboard() {
         </ResponsiveContainer>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-dark-800/50 backdrop-blur-md border border-cyan-500/20 rounded-lg p-6"
-        >
-          <h3 className="text-lg font-orbitron font-bold text-white mb-4">Recent Alerts</h3>
-          <div className="space-y-3">
-            {[
-              { type: 'success', message: 'Inventory sync completed successfully', time: '2m ago' },
-              { type: 'warning', message: 'Low stock alert: Router X-200', time: '15m ago' },
-              { type: 'info', message: 'System backup initiated', time: '1h ago' },
-            ].map((alert, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + index * 0.1 }}
-                className="flex items-start gap-3 p-3 bg-dark-900/50 border border-cyan-500/10 rounded"
-              >
-                <div className={`w-2 h-2 rounded-full mt-1.5 ${
-                  alert.type === 'success' ? 'bg-green-500' :
-                  alert.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                } animate-pulse`} />
-                <div className="flex-1">
-                  <p className="text-sm text-gray-300 font-inter">{alert.message}</p>
-                  <span className="text-xs text-gray-500 font-inter">{alert.time}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-dark-800/50 backdrop-blur-md border border-cyan-500/20 rounded-lg p-6"
-        >
-          <h3 className="text-lg font-orbitron font-bold text-white mb-4">System Performance</h3>
-          <div className="space-y-4">
-            {[
-              { label: 'Server Load', value: 67, color: 'cyan' },
-              { label: 'Database Query Time', value: 45, color: 'blue' },
-              { label: 'API Response Rate', value: 92, color: 'green' },
-            ].map((metric, index) => (
-              <motion.div
-                key={metric.label}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 + index * 0.1 }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400 font-inter">{metric.label}</span>
-                  <span className="text-sm text-cyan-500 font-orbitron font-semibold">{metric.value}%</span>
-                </div>
-                <div className="h-2 bg-dark-900/50 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${metric.value}%` }}
-                    transition={{ duration: 1, delay: 0.8 + index * 0.1 }}
-                    className={`h-full bg-gradient-to-r ${
-                      metric.color === 'cyan' ? 'from-cyan-500 to-cyan-400' :
-                      metric.color === 'blue' ? 'from-blue-500 to-blue-400' :
-                      'from-green-500 to-green-400'
-                    }`}
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
+      
     </motion.div>
   );
 }
