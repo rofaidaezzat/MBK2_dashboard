@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Trash2, Search, ShoppingCart, Loader2 } from 'lucide-react';
+import { Eye, Trash2, Search, ShoppingCart, Loader2, Download, Calendar } from 'lucide-react';
 import DataGrid from '../components/DataGrid';
 import ViewOrder from '../components/OrderModal/ViewOrder';
 import DeleteOrder from '../components/OrderModal/DeleteOrder';
@@ -12,6 +12,8 @@ export default function Orders() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const orders = data?.data || [];
 
@@ -25,11 +27,53 @@ export default function Orders() {
     setIsDeleteModalOpen(true);
   };
 
-  const filteredOrders = orders.filter(order =>
-    (order.guestName && order.guestName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (order.guestEmail && order.guestEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (order._id && order._id.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = (order.guestName && order.guestName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (order.guestEmail && order.guestEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (order._id && order._id.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const orderDate = new Date(order.createdAt);
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+
+    if (end) {
+      end.setHours(23, 59, 59, 999);
+    }
+
+    const matchesDate = (!start || orderDate >= start) && (!end || orderDate <= end);
+
+    return matchesSearch && matchesDate;
+  });
+
+  const handleExport = () => {
+    const headers = ['Order ID', 'Guest Name', 'Email', 'Phone', 'Items', 'Status', 'Total Amount', 'Date'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredOrders.map(order => {
+        const itemsString = order.items
+          .map(item => `${item?.product?.title || 'Unknown Product'} (x${item.quantity})`)
+          .join('; ')
+          .replace(/"/g, '""'); // Escape double quotes
+
+        return [
+          order._id,
+          `"${order.guestName}"`,
+          order.guestEmail,
+          order.guestPhone,
+          `"${itemsString}"`,
+          order.status,
+          order.totalAmount,
+          new Date(order.createdAt).toLocaleDateString()
+        ].join(',');
+      })
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -119,8 +163,8 @@ export default function Orders() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex-1 relative">
+      <div className="flex flex-col md:flex-row items-center gap-4">
+        <div className="flex-1 relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
           <input
             type="text"
@@ -129,6 +173,38 @@ export default function Orders() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-12 bg-dark-800/50 backdrop-blur-md border border-cyan-500/20 rounded-lg pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-all font-inter"
           />
+        </div>
+        
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative group">
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-500" size={16} />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-12 bg-dark-800/50 backdrop-blur-md border border-cyan-500/20 rounded-lg pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-all font-inter [&::-webkit-calendar-picker-indicator]:invert"
+            />
+          </div>
+          <span className="text-gray-400">-</span>
+          <div className="relative group">
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-500" size={16} />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="h-12 bg-dark-800/50 backdrop-blur-md border border-cyan-500/20 rounded-lg pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-all font-inter [&::-webkit-calendar-picker-indicator]:invert"
+            />
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleExport}
+            className="h-12 px-6 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-lg shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all flex items-center gap-2 whitespace-nowrap"
+          >
+            <Download size={18} />
+            Export Sheet
+          </motion.button>
         </div>
       </div>
 

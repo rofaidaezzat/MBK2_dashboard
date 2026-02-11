@@ -132,14 +132,16 @@ export default function CreateProduct({ isOpen, onClose }: CreateProductProps) {
 
         <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">Category</label>
-            <input
-                type="text"
+            <select
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full bg-dark-800 border border-cyan-500/20 rounded p-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                placeholder="Product Category"
-            />
+            >
+                <option value="" disabled>Select Category</option>
+                <option value="Home & Living">Home & Living</option>
+                <option value="Electronics">Electronics</option>
+            </select>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
