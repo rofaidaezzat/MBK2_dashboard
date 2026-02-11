@@ -7,9 +7,12 @@ import {
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
-  MessageCircle
+  MessageCircle,
+  LogOut
 } from 'lucide-react';
 import SidebarLogo from '../assets/595708428_122095426011158679_243980012230250174_n.jpg';
+import { useLogoutMutation } from '../app/Serves/cruduser';
+import { useNavigate } from 'react-router-dom';
 
 const navItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -22,15 +25,28 @@ const navItems = [
 export default function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  const [logout] = useLogoutMutation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+        await logout({}).unwrap();
+    } catch (error) {
+        console.error("Logout failed", error);
+    } finally {
+        localStorage.removeItem('token');
+        navigate('/login');
+    }
+  };
 
   return (
     <motion.aside
       initial={{ x: -300 }}
       animate={{ x: 0, width: isCollapsed ? 80 : 280 }}
       transition={{ duration: 0.3 }}
-      className="h-screen bg-dark-800/50 backdrop-blur-md border-r border-cyan-500/20 relative"
+      className="h-screen bg-dark-800/50 backdrop-blur-md border-r border-cyan-500/20 relative flex flex-col"
     >
-      <div className="p-6">
+      <div className="p-6 flex-1">
         <motion.div
           className="flex items-center justify-center mb-8"
         >
@@ -82,9 +98,21 @@ export default function AdminSidebar() {
         </nav>
       </div>
 
+       <div className="p-6 border-t border-cyan-500/10">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded text-red-400 hover:bg-red-500/10 transition-all group"
+        >
+          <LogOut size={20} className="group-hover:scale-110 transition-transform" />
+          {!isCollapsed && (
+            <span className="font-inter text-sm font-medium">Logout</span>
+          )}
+        </button>
+      </div>
+
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-20 w-6 h-6 bg-dark-800 border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-500 hover:bg-cyan-500/20 transition-all"
+        className="absolute -right-3 top-20 w-6 h-6 bg-dark-800 border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-500 hover:bg-cyan-500/20 transition-all z-50"
       >
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>

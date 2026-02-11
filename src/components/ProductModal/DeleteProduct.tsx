@@ -1,13 +1,29 @@
 import Modal from '../Modal';
+import { useDeleteProductMutation } from '../../app/Serves/crudProduct';
+import { Loader2 } from 'lucide-react';
 
 interface DeleteProductProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   productName: string;
+  productId?: string; // Added productId
 }
 
-export default function DeleteProduct({ isOpen, onClose, onConfirm, productName }: DeleteProductProps) {
+export default function DeleteProduct({ isOpen, onClose, onConfirm, productName, productId }: DeleteProductProps) {
+    const [deleteProduct, { isLoading }] = useDeleteProductMutation();
+
+    const handleConfirm = async () => {
+        if (productId) {
+            try {
+                await deleteProduct(productId).unwrap();
+                onConfirm(); // This just closes modal in parent
+            } catch (error) {
+                console.error("Failed to delete product:", error);
+            }
+        }
+    };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Confirm Deletion">
       <div className="space-y-6">
@@ -24,9 +40,11 @@ export default function DeleteProduct({ isOpen, onClose, onConfirm, productName 
             Cancel
           </button>
           <button
-            onClick={onConfirm}
-            className="px-4 py-2 bg-red-500/20 border border-red-500/50 text-red-500 text-sm font-medium rounded hover:bg-red-500/30 transition-all font-orbitron"
+            onClick={handleConfirm}
+            disabled={isLoading}
+            className="px-4 py-2 bg-red-500/20 border border-red-500/50 text-red-500 text-sm font-medium rounded hover:bg-red-500/30 transition-all font-orbitron flex items-center gap-2"
           >
+            {isLoading ? <Loader2 className="animate-spin" size={16} /> : null}
             Delete Protocol
           </button>
         </div>

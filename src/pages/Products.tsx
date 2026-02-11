@@ -1,88 +1,52 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Loader2 } from 'lucide-react';
 import DataGrid from '../components/DataGrid';
 import CreateProduct from '../components/ProductModal/CreateProduct';
 import UpdateProduct from '../components/ProductModal/UpdateProduct';
 import DeleteProduct from '../components/ProductModal/DeleteProduct';
+import { useGetProductsQuery } from '../app/Serves/crudProduct';
+import Pagination from '../components/Pagination';
 
 interface Product {
-  id: string;
-  name: string;
+  _id: string;
+  title: string;
+  description: string;
   price: number;
+  category: string;
   stock: number;
-  status: 'active' | 'low' | 'out';
-  image: string;
+  tags: string[];
+  images: string[];
+  status?: 'active' | 'low' | 'out'; // UI helper property
 }
-
-const mockProducts: Product[] = [
-  {
-    id: 'PRD-001',
-    name: 'HyperSpeed Router X-200',
-    price: 299.99,
-    stock: 45,
-    status: 'active',
-    image: 'https://images.pexels.com/photos/2582937/pexels-photo-2582937.jpeg?auto=compress&cs=tinysrgb&w=100',
-  },
-  {
-    id: 'PRD-002',
-    name: 'Quantum Switch Pro',
-    price: 449.99,
-    stock: 8,
-    status: 'low',
-    image: 'https://images.pexels.com/photos/2582935/pexels-photo-2582935.jpeg?auto=compress&cs=tinysrgb&w=100',
-  },
-  {
-    id: 'PRD-003',
-    name: 'NeuralLink Gateway',
-    price: 599.99,
-    stock: 0,
-    status: 'out',
-    image: 'https://images.pexels.com/photos/2881229/pexels-photo-2881229.jpeg?auto=compress&cs=tinysrgb&w=100',
-  },
-  {
-    id: 'PRD-004',
-    name: 'FiberOptic Cable Bundle',
-    price: 89.99,
-    stock: 156,
-    status: 'active',
-    image: 'https://images.pexels.com/photos/2881232/pexels-photo-2881232.jpeg?auto=compress&cs=tinysrgb&w=100',
-  },
-  {
-    id: 'PRD-005',
-    name: 'Network Security Pod',
-    price: 799.99,
-    stock: 23,
-    status: 'active',
-    image: 'https://images.pexels.com/photos/2582926/pexels-photo-2582926.jpeg?auto=compress&cs=tinysrgb&w=100',
-  },
-];
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  
+  const { data, isLoading, isError } = useGetProductsQuery({ page, limit });
+  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const handleCreateProduct = (newProduct: Product) => {
-    setProducts([...products, newProduct]);
+    // API handles update via tag invalidation
     setIsCreateModalOpen(false);
   };
 
   const handleUpdateProduct = (updatedProduct: Product) => {
-    setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+     // API handles update via tag invalidation
     setIsUpdateModalOpen(false);
     setSelectedProduct(null);
   };
 
   const handleDeleteProduct = () => {
-    if (selectedProduct) {
-      setProducts(products.filter(p => p.id !== selectedProduct.id));
+     // API handles update via tag invalidation
       setIsDeleteModalOpen(false);
       setSelectedProduct(null);
-    }
   };
 
   const openUpdateModal = (product: Product) => {
@@ -95,55 +59,38 @@ export default function Products() {
     setIsDeleteModalOpen(true);
   };
 
+  const products = data?.data || [];
+  const pagination = data?.pagination || { currentPage: 1, limit: 10, numberOfPages: 1 };
+
+  // Client-side search for now, could be server-side if API supports it
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.id.toLowerCase().includes(searchTerm.toLowerCase())
+    product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product._id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (status: Product['status']) => {
-    const styles = {
-      active: 'bg-green-500/20 border-green-500/50 text-green-500',
-      low: 'bg-yellow-500/20 border-yellow-500/50 text-yellow-500',
-      out: 'bg-red-500/20 border-red-500/50 text-red-500',
-    };
 
-    const labels = {
-      active: 'OPERATIONAL',
-      low: 'LOW STOCK',
-      out: 'DEPLETED',
-    };
-
-    return (
-      <span className={`inline-flex items-center gap-1 px-3 py-1 border rounded text-xs font-orbitron font-semibold ${styles[status]}`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-        {labels[status]}
-      </span>
-    );
-  };
 
   const columns = [
-    { key: 'image', label: 'Visual ID', width: '100px' },
-    { key: 'id', label: 'Protocol ID', width: '120px' },
-    { key: 'name', label: 'Designation', width: 'auto' },
-    { key: 'price', label: 'Value', width: '120px' },
-    { key: 'stock', label: 'Quantity', width: '100px' },
-    { key: 'status', label: 'Status', width: '150px' },
-    { key: 'actions', label: 'Actions', width: '120px' },
+    { key: 'image', label: 'Visual ID', width: '80px' },
+    { key: 'title', label: 'Title', width: '150px' },
+    { key: 'category', label: 'Category', width: '120px' },
+    { key: 'price', label: 'Price', width: '100px' },
+    { key: 'description', label: 'Description', width: 'auto' },
+    { key: 'actions', label: 'Actions', width: '100px' },
   ];
 
   const tableData = filteredProducts.map(product => ({
     image: (
       <img
-        src={product.image}
-        alt={product.name}
+        src={product.images[0] || 'https://via.placeholder.com/50'}
+        alt={product.title}
         className="w-12 h-12 rounded border border-cyan-500/30 object-cover"
       />
     ),
-    id: <span className="font-mono text-cyan-500">{product.id}</span>,
-    name: <span className="font-semibold">{product.name}</span>,
-    price: <span className="font-orbitron">${product.price.toFixed(2)}</span>,
-    stock: <span className="font-mono">{product.stock}</span>,
-    status: getStatusBadge(product.status),
+    title: <span className="font-semibold text-white">{product.title}</span>,
+    category: <span className="font-inter text-cyan-400">{product.category}</span>,
+    price: <span className="font-orbitron text-yellow-500">${product.price.toFixed(2)}</span>,
+    description: <span className="text-gray-400 text-sm truncate max-w-xs block" title={product.description}>{product.description}</span>,
     actions: (
       <div className="flex items-center gap-2">
         <motion.button
@@ -165,6 +112,18 @@ export default function Products() {
       </div>
     ),
   }));
+
+  if (isLoading) {
+      return (
+          <div className="flex justify-center items-center h-full">
+              <Loader2 className="animate-spin text-cyan-500" size={48} />
+          </div>
+      )
+  }
+
+  if (isError) {
+      return <div className="text-red-500 text-center">Failed to load products</div>
+  }
 
   return (
     <motion.div
@@ -210,9 +169,9 @@ export default function Products() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'Total Products', value: products.length, color: 'cyan' },
-          { label: 'Low Stock Items', value: products.filter(p => p.status === 'low').length, color: 'yellow' },
-          { label: 'Out of Stock', value: products.filter(p => p.status === 'out').length, color: 'red' },
+          { label: 'Total Products', value: data?.results || 0, color: 'cyan' },
+          { label: 'Low Stock Items', value: products.filter(p => p.stock > 0 && p.stock < 10).length, color: 'yellow' },
+          { label: 'Out of Stock', value: products.filter(p => p.stock === 0).length, color: 'red' },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -238,8 +197,12 @@ export default function Products() {
         transition={{ delay: 0.3 }}
       >
         <DataGrid columns={columns} data={tableData} />
+         <Pagination 
+            currentPage={pagination.currentPage} 
+            totalPages={pagination.numberOfPages} 
+            onPageChange={setPage} 
+        />
       </motion.div>
-
       <CreateProduct
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -253,7 +216,7 @@ export default function Products() {
           setSelectedProduct(null);
         }}
         onSubmit={handleUpdateProduct}
-        product={selectedProduct}
+        product={selectedProduct} // Type mismatch until interface is updated
       />
 
       <DeleteProduct
@@ -263,7 +226,8 @@ export default function Products() {
           setSelectedProduct(null);
         }}
         onConfirm={handleDeleteProduct}
-        productName={selectedProduct?.name || ''}
+        productName={selectedProduct?.title || ''}
+        productId={selectedProduct?._id}
       />
     </motion.div>
   );

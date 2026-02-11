@@ -1,13 +1,5 @@
-
 import Modal from '../Modal';
-interface Message {
-  id: string;
-  sender: string;
-  subject: string;
-  content: string;
-  date: string;
-  status: 'new' | 'read' | 'archived';
-}
+import { Message } from '../../app/Serves/crudContact';
 
 interface ViewMessageProps {
   isOpen: boolean;
@@ -19,22 +11,23 @@ export default function ViewMessage({ isOpen, onClose, message }: ViewMessagePro
   if (!message) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Message: ${message.subject}`}>
+    <Modal isOpen={isOpen} onClose={onClose} title={`Message from: ${message.name}`}>
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-1">
             <span className="text-xs text-gray-500 font-inter uppercase tracking-wider">Sender</span>
-            <p className="text-lg font-semibold text-white">{message.sender}</p>
+            <p className="text-lg font-semibold text-white">{message.name}</p>
+            <p className="text-sm text-cyan-400">{message.email}</p>
           </div>
           <div className="space-y-1 text-right">
             <span className="text-xs text-gray-500 font-inter uppercase tracking-wider">Received</span>
-            <p className="text-sm font-mono text-gray-300">{message.date}</p>
+            <p className="text-sm font-mono text-gray-300">{new Date(message.createdAt).toLocaleString()}</p>
           </div>
         </div>
 
         <div className="p-4 bg-dark-800/50 rounded-lg border border-cyan-500/10 min-h-[150px]">
           <p className="text-gray-300 font-inter leading-relaxed whitespace-pre-wrap">
-            {message.content}
+            {message.message}
           </p>
         </div>
 

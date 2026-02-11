@@ -1,14 +1,26 @@
-
 import Modal from '../Modal';
+import { useDeleteMessageMutation } from '../../app/Serves/crudContact';
+import { Loader2 } from 'lucide-react';
 
 interface DeleteMessageProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  messageId: string;
   senderName: string;
 }
 
-export default function DeleteMessage({ isOpen, onClose, onConfirm, senderName }: DeleteMessageProps) {
+export default function DeleteMessage({ isOpen, onClose, messageId, senderName }: DeleteMessageProps) {
+  const [deleteMessage, { isLoading }] = useDeleteMessageMutation();
+
+  const handleConfirm = async () => {
+      try {
+          await deleteMessage(messageId).unwrap();
+          onClose();
+      } catch (error) {
+          console.error("Failed to delete message", error);
+      }
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Delete Message">
       <div className="space-y-6">
@@ -25,9 +37,11 @@ export default function DeleteMessage({ isOpen, onClose, onConfirm, senderName }
             Cancel
           </button>
           <button
-            onClick={onConfirm}
-            className="px-4 py-2 bg-red-500/20 border border-red-500/50 text-red-500 text-sm font-medium rounded hover:bg-red-500/30 transition-all font-orbitron"
+            onClick={handleConfirm}
+            disabled={isLoading}
+            className="px-4 py-2 bg-red-500/20 border border-red-500/50 text-red-500 text-sm font-medium rounded hover:bg-red-500/30 transition-all font-orbitron flex items-center gap-2"
           >
+            {isLoading && <Loader2 className="animate-spin" size={14} />}
             Confirm Deletion
           </button>
         </div>
